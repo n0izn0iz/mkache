@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import path from "path";
 
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
@@ -20,6 +21,7 @@ async function run(): Promise<void> {
 
         if (!utils.isValidEvent()) {
             utils.logWarning(
+                // eslint-disable-next-line prettier/prettier
                 `Event Validation Error: The event type ${process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
@@ -28,7 +30,7 @@ async function run(): Promise<void> {
 
         const state = utils.getCacheState();
 
-        const ruleTarget = core.getInput(Inputs.Rule)
+        const ruleTarget = core.getInput(Inputs.Rule);
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey = core.getState(State.CachePrimaryKey);
@@ -44,23 +46,32 @@ async function run(): Promise<void> {
             return;
         }
 
+        const makefile = core.getInput(Inputs.Makefile) || "Makefile";
+        const dirname = path.dirname(makefile);
+        const cacheTarget = path.join(dirname, ruleTarget);
+
+        core.info(`Target: ${cacheTarget}`);
 
         try {
-            await cache.saveCache([ruleTarget], primaryKey, {
+            await cache.saveCache([cacheTarget], primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
             });
             core.info(`Cache saved with key: ${primaryKey}`);
         } catch (error) {
-            if (error.name === cache.ValidationError.name) {
-                throw error;
-            } else if (error.name === cache.ReserveCacheError.name) {
-                core.info(error.message);
-            } else {
-                utils.logWarning(error.message);
+            if (error instanceof Error) {
+                if (error.name === cache.ValidationError.name) {
+                    throw error;
+                } else if (error.name === cache.ReserveCacheError.name) {
+                    core.info(error.message);
+                } else {
+                    utils.logWarning(error.message);
+                }
             }
         }
     } catch (error) {
-        utils.logWarning(error.message);
+        if (error instanceof Error) {
+            utils.logWarning(error.message);
+        }
     }
 }
 

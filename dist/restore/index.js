@@ -49215,10 +49215,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
-const utils = __importStar(__webpack_require__(443));
 const child_process_1 = __importDefault(__webpack_require__(129));
 const path_1 = __importDefault(__webpack_require__(622));
+const constants_1 = __webpack_require__(196);
+const utils = __importStar(__webpack_require__(443));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49239,12 +49239,20 @@ function run() {
             core.info(`Target: ${cacheTarget}`);
             const cmd = `cd ${dirname} && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`;
             core.info("Running: " + cmd);
-            const deps = child_process_1.default.execSync(cmd).toString("utf-8").trim();
+            const deps = child_process_1.default
+                .execSync(cmd)
+                .toString("utf-8")
+                .trim();
             core.info("Deps: " + deps);
             // FIXME: use file names and acls
             // FIXME: add makefile or even better, the rule definition, to hash
-            const hash = child_process_1.default.execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8");
-            const primaryKey = "mkache_v3.0.18-" + core.getInput(constants_1.Inputs.Key, { required: true }) + "-" + hash;
+            const hash = child_process_1.default
+                .execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`)
+                .toString("utf-8");
+            const primaryKey = "mkache_v3.0.20-" +
+                core.getInput(constants_1.Inputs.Key, { required: true }) +
+                "-" +
+                hash;
             core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
             const restoreKeys = [];
             const cachePaths = [cacheTarget];

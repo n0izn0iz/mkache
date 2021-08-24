@@ -2,7 +2,7 @@ export enum Inputs {
     Rule = "rule",
     UploadChunkSize = "upload-chunk-size",
     Makefile = "makefile",
-    Key = "key",
+    Key = "key"
 }
 
 export enum Outputs {

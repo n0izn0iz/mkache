@@ -1,10 +1,10 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import child_process from "child_process";
+import path from "path";
 
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
-import child_process from "child_process"
-import path from "path"
 
 async function run(): Promise<void> {
     try {
@@ -19,35 +19,44 @@ async function run(): Promise<void> {
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${process.env[Events.Key]
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
         }
 
-        const ruleTarget = core.getInput(Inputs.Rule)
-        const makefile = core.getInput(Inputs.Makefile) || "Makefile"
-        const dirname = path.dirname(makefile)
+        const ruleTarget = core.getInput(Inputs.Rule);
+        const makefile = core.getInput(Inputs.Makefile) || "Makefile";
+        const dirname = path.dirname(makefile);
 
-        const cacheTarget = path.join(dirname, ruleTarget)
+        const cacheTarget = path.join(dirname, ruleTarget);
 
-        core.info(`Target: ${cacheTarget}`)
+        core.info(`Target: ${cacheTarget}`);
 
-        const cmd = `cd ${dirname} && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`
-        core.info("Running: " + cmd)
+        const cmd = `cd ${dirname} && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`;
+        core.info("Running: " + cmd);
 
-        const deps = child_process.execSync(cmd).toString("utf-8").trim()
+        const deps = child_process
+            .execSync(cmd)
+            .toString("utf-8")
+            .trim();
 
-        core.info("Deps: " + deps)
+        core.info("Deps: " + deps);
 
         // FIXME: use file names and acls
         // FIXME: add makefile or even better, the rule definition, to hash
 
-        const hash = child_process.execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
+        const hash = child_process
+            .execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`)
+            .toString("utf-8");
 
-        const primaryKey = "mkache_v3.0.18-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
+        const primaryKey =
+            "mkache_v3.0.20-" +
+            core.getInput(Inputs.Key, { required: true }) +
+            "-" +
+            hash;
         core.saveState(State.CachePrimaryKey, primaryKey);
-
 
         const restoreKeys = [];
         const cachePaths = [cacheTarget];
@@ -74,7 +83,7 @@ async function run(): Promise<void> {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
 
-            child_process.execSync(`touch ${cacheTarget}`)
+            child_process.execSync(`touch ${cacheTarget}`);
 
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
