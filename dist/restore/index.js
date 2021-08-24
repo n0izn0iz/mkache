@@ -49244,7 +49244,7 @@ function run() {
             // FIXME: use file names and acls
             // FIXME: add makefile or even better, the rule definition, to hash
             const hash = child_process_1.default.execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8");
-            const primaryKey = "mkache-" + core.getInput(constants_1.Inputs.Key, { required: true }) + "-" + hash;
+            const primaryKey = "mkache_v3.0.18-" + core.getInput(constants_1.Inputs.Key, { required: true }) + "-" + hash;
             core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
             const restoreKeys = [];
             const cachePaths = [cacheTarget];

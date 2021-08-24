@@ -45,7 +45,7 @@ async function run(): Promise<void> {
 
         const hash = child_process.execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
 
-        const primaryKey = "mkache-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
+        const primaryKey = "mkache_v3.0.18-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
         core.saveState(State.CachePrimaryKey, primaryKey);
 
 
