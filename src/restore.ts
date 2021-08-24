@@ -24,13 +24,17 @@ async function run(): Promise<void> {
             return;
         }
 
-        const makefileDir = core.getInput(Inputs.Makefile)
         const ruleTarget = core.getInput(Inputs.Rule)
 
-        const primKeyBuf = child_process.execSync(`cd ${makefileDir} && cat $(make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2) | shasum | cut -d' ' -f1`)
-        const hash = primKeyBuf.toString("utf-8")
+        const deps = child_process.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8")
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true }) + "-" + hash;
+        core.info("Deps: " + deps)
+
+        // FIXME: use file names and acls
+
+        const hash = child_process.execSync(`cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
+
+        const primaryKey = "mkache-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
         core.saveState(State.CachePrimaryKey, primaryKey);
 
         const restoreKeys = [];
