@@ -20,14 +20,15 @@ async function run(): Promise<void> {
 
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
+                `Event Validation Error: The event type ${process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
         }
 
         const state = utils.getCacheState();
+
+        const ruleTarget = core.getInput(Inputs.Rule)
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey = core.getState(State.CachePrimaryKey);
@@ -43,12 +44,9 @@ async function run(): Promise<void> {
             return;
         }
 
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
-            required: true
-        });
 
         try {
-            await cache.saveCache(cachePaths, primaryKey, {
+            await cache.saveCache([ruleTarget], primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
             });
             core.info(`Cache saved with key: ${primaryKey}`);

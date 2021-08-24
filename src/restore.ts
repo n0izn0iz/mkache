@@ -3,6 +3,7 @@ import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
+import child_process from "child_process"
 
 async function run(): Promise<void> {
     try {
@@ -17,20 +18,23 @@ async function run(): Promise<void> {
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
+                `Event Validation Error: The event type ${process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
         }
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true });
-        core.saveState(State.CachePrimaryKey, primaryKey);
+        const makefileDir = core.getInput(Inputs.Makefile)
+        const ruleTarget = core.getInput(Inputs.Rule)
 
-        const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
-            required: true
-        });
+        const primKeyBuf = child_process.execSync(`cd ${makefileDir} && cat $(make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2) | shasum | cut -d' ' -f1`)
+        const hash = primKeyBuf.toString("utf-8")
+
+        const primaryKey = core.getInput(Inputs.Key, { required: true });
+        core.saveState(State.CachePrimaryKey, primaryKey + "-" + hash);
+
+        const restoreKeys = [primaryKey];
+        const cachePaths = [ruleTarget];
 
         try {
             const cacheKey = await cache.restoreCache(
@@ -53,6 +57,8 @@ async function run(): Promise<void> {
 
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
+
+            child_process.execSync(`touch ${ruleTarget}`)
 
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
