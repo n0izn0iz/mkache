@@ -5465,10 +5465,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["Rule"] = "rule";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["Makefile"] = "makefile";
+    Inputs["Key"] = "key";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -49209,11 +49209,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 const utils = __importStar(__webpack_require__(443));
+const child_process_1 = __importDefault(__webpack_require__(129));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49227,12 +49231,14 @@ function run() {
                 utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
+            const makefileDir = core.getInput(constants_1.Inputs.Makefile);
+            const ruleTarget = core.getInput(constants_1.Inputs.Rule);
+            const primKeyBuf = child_process_1.default.execSync(`cd ${makefileDir} && cat $(make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2) | shasum | cut -d' ' -f1`);
+            const hash = primKeyBuf.toString("utf-8");
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-            const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
+            core.saveState(constants_1.State.CachePrimaryKey, primaryKey + "-" + hash);
+            const restoreKeys = [primaryKey];
+            const cachePaths = [ruleTarget];
             try {
                 const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
                 if (!cacheKey) {
@@ -49246,6 +49252,7 @@ function run() {
                 utils.setCacheState(cacheKey);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
                 utils.setCacheHitOutput(isExactKeyMatch);
+                child_process_1.default.execSync(`touch ${ruleTarget}`);
                 core.info(`Cache restored from key: ${cacheKey}`);
             }
             catch (error) {

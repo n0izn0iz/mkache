@@ -5465,10 +5465,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["Rule"] = "rule";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["Makefile"] = "makefile";
+    Inputs["Key"] = "key";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -47170,6 +47170,7 @@ function run() {
                 return;
             }
             const state = utils.getCacheState();
+            const ruleTarget = core.getInput(constants_1.Inputs.Rule);
             // Inputs are re-evaluted before the post action, so we want the original key used for restore
             const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
             if (!primaryKey) {
@@ -47180,11 +47181,8 @@ function run() {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
             try {
-                yield cache.saveCache(cachePaths, primaryKey, {
+                yield cache.saveCache([ruleTarget], primaryKey, {
                     uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
                 });
                 core.info(`Cache saved with key: ${primaryKey}`);
