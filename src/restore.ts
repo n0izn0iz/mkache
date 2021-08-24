@@ -30,10 +30,10 @@ async function run(): Promise<void> {
         const primKeyBuf = child_process.execSync(`cd ${makefileDir} && cat $(make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2) | shasum | cut -d' ' -f1`)
         const hash = primKeyBuf.toString("utf-8")
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true });
-        core.saveState(State.CachePrimaryKey, primaryKey + "-" + hash);
+        const primaryKey = core.getInput(Inputs.Key, { required: true }) + "-" + hash;
+        core.saveState(State.CachePrimaryKey, primaryKey);
 
-        const restoreKeys = [primaryKey];
+        const restoreKeys = [];
         const cachePaths = [ruleTarget];
 
         try {
