@@ -49231,13 +49231,14 @@ function run() {
                 utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
-            const makefileDir = core.getInput(constants_1.Inputs.Makefile);
             const ruleTarget = core.getInput(constants_1.Inputs.Rule);
-            const primKeyBuf = child_process_1.default.execSync(`cd ${makefileDir} && cat $(make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2) | shasum | cut -d' ' -f1`);
-            const hash = primKeyBuf.toString("utf-8");
-            const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            core.saveState(constants_1.State.CachePrimaryKey, primaryKey + "-" + hash);
-            const restoreKeys = [primaryKey];
+            const deps = child_process_1.default.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8");
+            core.info("Deps: " + deps);
+            // FIXME: use file names and acls
+            const hash = child_process_1.default.execSync(`cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8");
+            const primaryKey = "mkache-" + core.getInput(constants_1.Inputs.Key, { required: true }) + "-" + hash;
+            core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
+            const restoreKeys = [];
             const cachePaths = [ruleTarget];
             try {
                 const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
