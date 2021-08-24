@@ -49233,7 +49233,9 @@ function run() {
             }
             const ruleTarget = core.getInput(constants_1.Inputs.Rule);
             const makefile = core.getInput(constants_1.Inputs.Makefile) || "Makefile";
-            const deps = child_process_1.default.execSync(`cd $(dirname ${makefile}) && make -f ${makefile} -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim();
+            const cmd = `cd $(dirname ${makefile}) && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`;
+            core.info("Running: " + cmd);
+            const deps = child_process_1.default.execSync(cmd).toString("utf-8").trim();
             core.info("Deps: " + deps);
             // FIXME: use file names and acls
             // FIXME: add makefile or even better, the rule definition, to hash

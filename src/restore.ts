@@ -27,7 +27,10 @@ async function run(): Promise<void> {
         const ruleTarget = core.getInput(Inputs.Rule)
         const makefile = core.getInput(Inputs.Makefile) || "Makefile"
 
-        const deps = child_process.execSync(`cd $(dirname ${makefile}) && make -f ${makefile} -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim()
+        const cmd = `cd $(dirname ${makefile}) && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`
+        core.info("Running: " + cmd)
+
+        const deps = child_process.execSync(cmd).toString("utf-8").trim()
 
         core.info("Deps: " + deps)
 
