@@ -27,12 +27,12 @@ async function run(): Promise<void> {
         const ruleTarget = core.getInput(Inputs.Rule)
         const makefile = core.getInput(Inputs.Makefile) || "Makefile"
 
-        const deps = child_process.execSync(`make -f ${makefile} -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim()
+        const deps = child_process.execSync(`cd $(dirname ${makefile}) && make -f ${makefile} -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim()
 
         core.info("Deps: " + deps)
 
         // FIXME: use file names and acls
-        // FIXME: add makefile or even better, the rule definition, to hash 
+        // FIXME: add makefile or even better, the rule definition, to hash
 
         const hash = child_process.execSync(`cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
 
