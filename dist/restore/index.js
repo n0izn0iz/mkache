@@ -49257,7 +49257,7 @@ function run() {
                 utils.setCacheState(cacheKey);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
                 utils.setCacheHitOutput(isExactKeyMatch);
-                child_process_1.default.execSync(`touch ${ruleTarget}`);
+                child_process_1.default.execSync(`touch $(dirname ${makefile})/${ruleTarget}`);
                 core.info(`Cache restored from key: ${cacheKey}`);
             }
             catch (error) {

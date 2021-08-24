@@ -67,7 +67,7 @@ async function run(): Promise<void> {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
 
-            child_process.execSync(`touch ${ruleTarget}`)
+            child_process.execSync(`touch $(dirname ${makefile})/${ruleTarget}`)
 
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
