@@ -4,6 +4,7 @@ import * as core from "@actions/core";
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 import child_process from "child_process"
+import path from "path"
 
 async function run(): Promise<void> {
     try {
@@ -26,8 +27,13 @@ async function run(): Promise<void> {
 
         const ruleTarget = core.getInput(Inputs.Rule)
         const makefile = core.getInput(Inputs.Makefile) || "Makefile"
+        const dirname = path.dirname(ruleTarget)
 
-        const cmd = `cd $(dirname ${makefile}) && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`
+        const cacheTarget = path.join(dirname, ruleTarget)
+
+        core.info(`Target: ${cacheTarget}`)
+
+        const cmd = `cd ${dirname} && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`
         core.info("Running: " + cmd)
 
         const deps = child_process.execSync(cmd).toString("utf-8").trim()
@@ -37,13 +43,14 @@ async function run(): Promise<void> {
         // FIXME: use file names and acls
         // FIXME: add makefile or even better, the rule definition, to hash
 
-        const hash = child_process.execSync(`cd $(dirname ${makefile}) && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
+        const hash = child_process.execSync(`cd ${dirname} && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
 
         const primaryKey = "mkache-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
         core.saveState(State.CachePrimaryKey, primaryKey);
 
+
         const restoreKeys = [];
-        const cachePaths = [ruleTarget];
+        const cachePaths = [cacheTarget];
 
         try {
             const cacheKey = await cache.restoreCache(
@@ -67,7 +74,7 @@ async function run(): Promise<void> {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
 
-            child_process.execSync(`touch $(dirname ${makefile})/${ruleTarget}`)
+            child_process.execSync(`touch ${cacheTarget}`)
 
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
