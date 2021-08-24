@@ -26,7 +26,7 @@ async function run(): Promise<void> {
 
         const ruleTarget = core.getInput(Inputs.Rule)
 
-        const deps = child_process.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8")
+        const deps = child_process.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim()
 
         core.info("Deps: " + deps)
 

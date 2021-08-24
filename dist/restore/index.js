@@ -49232,7 +49232,7 @@ function run() {
                 return;
             }
             const ruleTarget = core.getInput(constants_1.Inputs.Rule);
-            const deps = child_process_1.default.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8");
+            const deps = child_process_1.default.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8").trim();
             core.info("Deps: " + deps);
             // FIXME: use file names and acls
             const hash = child_process_1.default.execSync(`cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8");
