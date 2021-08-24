@@ -3,6 +3,7 @@ import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
+import path from "path"
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -44,9 +45,14 @@ async function run(): Promise<void> {
             return;
         }
 
+        const makefile = core.getInput(Inputs.Makefile) || "Makefile"
+        const dirname = path.dirname(makefile)
+        const cacheTarget = path.join(dirname, ruleTarget)
+
+        core.info(`Target: ${cacheTarget}`)
 
         try {
-            await cache.saveCache([ruleTarget], primaryKey, {
+            await cache.saveCache([cacheTarget], primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
             });
             core.info(`Cache saved with key: ${primaryKey}`);

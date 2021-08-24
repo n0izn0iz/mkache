@@ -47149,11 +47149,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 const utils = __importStar(__webpack_require__(443));
+const path_1 = __importDefault(__webpack_require__(622));
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
 // throw an uncaught exception.  Instead of failing this action, just warn.
@@ -47181,8 +47185,12 @@ function run() {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
+            const makefile = core.getInput(constants_1.Inputs.Makefile) || "Makefile";
+            const dirname = path_1.default.dirname(makefile);
+            const cacheTarget = path_1.default.join(dirname, ruleTarget);
+            core.info(`Target: ${cacheTarget}`);
             try {
-                yield cache.saveCache([ruleTarget], primaryKey, {
+                yield cache.saveCache([cacheTarget], primaryKey, {
                     uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
                 });
                 core.info(`Cache saved with key: ${primaryKey}`);
