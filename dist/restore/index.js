@@ -49234,7 +49234,7 @@ function run() {
             }
             const ruleTarget = core.getInput(constants_1.Inputs.Rule);
             const makefile = core.getInput(constants_1.Inputs.Makefile) || "Makefile";
-            const dirname = path_1.default.dirname(ruleTarget);
+            const dirname = path_1.default.dirname(makefile);
             const cacheTarget = path_1.default.join(dirname, ruleTarget);
             core.info(`Target: ${cacheTarget}`);
             const cmd = `cd ${dirname} && make -f $(basename ${makefile}) -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`;

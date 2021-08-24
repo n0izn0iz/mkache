@@ -27,7 +27,7 @@ async function run(): Promise<void> {
 
         const ruleTarget = core.getInput(Inputs.Rule)
         const makefile = core.getInput(Inputs.Makefile) || "Makefile"
-        const dirname = path.dirname(ruleTarget)
+        const dirname = path.dirname(makefile)
 
         const cacheTarget = path.join(dirname, ruleTarget)
 
