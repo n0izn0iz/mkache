@@ -28,6 +28,8 @@ async function run(): Promise<void> {
 
         const deps = child_process.execSync(`make -pn ${ruleTarget} 2>/dev/null | grep "${ruleTarget}: " | cut -d: -f2`).toString("utf-8")
 
+        core.info("trolololololo")
+
         core.info("Deps: " + deps)
         // pls do bump ?????
 
