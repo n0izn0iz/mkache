@@ -37,7 +37,7 @@ async function run(): Promise<void> {
         // FIXME: use file names and acls
         // FIXME: add makefile or even better, the rule definition, to hash
 
-        const hash = child_process.execSync(`cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
+        const hash = child_process.execSync(`cd $(dirname ${makefile}) && cat ${deps} | shasum | cut -d' ' -f1`).toString("utf-8")
 
         const primaryKey = "mkache-" + core.getInput(Inputs.Key, { required: true }) + "-" + hash;
         core.saveState(State.CachePrimaryKey, primaryKey);
