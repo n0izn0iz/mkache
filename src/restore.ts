@@ -1,7 +1,9 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import { execSync } from "child_process";
 
 import { Events, Inputs, State } from "./constants";
+import * as mkache from "./mkache";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
@@ -24,13 +26,11 @@ async function run(): Promise<void> {
             return;
         }
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true });
+        const { key: primaryKey, cacheTarget } = await mkache.getInfo();
         core.saveState(State.CachePrimaryKey, primaryKey);
 
-        const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
-            required: true
-        });
+        const restoreKeys = [];
+        const cachePaths = [cacheTarget];
 
         try {
             const cacheKey = await cache.restoreCache(
@@ -50,21 +50,24 @@ async function run(): Promise<void> {
 
             // Store the matched cache key
             utils.setCacheState(cacheKey);
+            core.saveState(State.CacheTarget, cacheTarget);
 
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
 
+            execSync(`touch ${cacheTarget}`);
+
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
-            if (error.name === cache.ValidationError.name) {
+            if ((error as Error).name === cache.ValidationError.name) {
                 throw error;
             } else {
-                utils.logWarning(error.message);
+                utils.logWarning((error as Error).message);
                 utils.setCacheHitOutput(false);
             }
         }
     } catch (error) {
-        core.setFailed(error.message);
+        core.setFailed((error as Error).message);
     }
 }
 

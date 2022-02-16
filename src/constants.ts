@@ -1,7 +1,7 @@
 export enum Inputs {
+    Rule = "rule",
+    Makefile = "makefile",
     Key = "key",
-    Path = "path",
-    RestoreKeys = "restore-keys",
     UploadChunkSize = "upload-chunk-size"
 }
 
@@ -10,6 +10,7 @@ export enum Outputs {
 }
 
 export enum State {
+    CacheTarget = "path",
     CachePrimaryKey = "CACHE_KEY",
     CacheMatchedKey = "CACHE_RESULT"
 }
