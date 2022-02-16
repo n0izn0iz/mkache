@@ -43,9 +43,7 @@ async function run(): Promise<void> {
             return;
         }
 
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
-            required: true
-        });
+        const cachePaths = [core.getState(State.CacheTarget)];
 
         try {
             await cache.saveCache(cachePaths, primaryKey, {
@@ -53,16 +51,16 @@ async function run(): Promise<void> {
             });
             core.info(`Cache saved with key: ${primaryKey}`);
         } catch (error) {
-            if (error.name === cache.ValidationError.name) {
+            if ((error as Error).name === cache.ValidationError.name) {
                 throw error;
-            } else if (error.name === cache.ReserveCacheError.name) {
-                core.info(error.message);
+            } else if ((error as Error).name === cache.ReserveCacheError.name) {
+                core.info((error as Error).message);
             } else {
-                utils.logWarning(error.message);
+                utils.logWarning((error as Error).message);
             }
         }
     } catch (error) {
-        utils.logWarning(error.message);
+        utils.logWarning((error as Error).message);
     }
 }
 
