@@ -4602,9 +4602,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
+    Inputs["Rule"] = "rule";
+    Inputs["Makefile"] = "makefile";
     Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -4613,6 +4613,7 @@ var Outputs;
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
+    State["CacheTarget"] = "path";
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
 })(State = exports.State || (exports.State = {}));
@@ -45191,9 +45192,8 @@ function run() {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
+            const cachePaths = [core.getState(constants_1.State.CacheTarget)];
+            core.info(`Saving: ${cachePaths}`);
             try {
                 yield cache.saveCache(cachePaths, primaryKey, {
                     uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)

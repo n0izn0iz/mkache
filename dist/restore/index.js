@@ -4602,9 +4602,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
+    Inputs["Rule"] = "rule";
+    Inputs["Makefile"] = "makefile";
     Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -4613,6 +4613,7 @@ var Outputs;
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
+    State["CacheTarget"] = "path";
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
 })(State = exports.State || (exports.State = {}));
@@ -42219,7 +42220,94 @@ exports.isValid = function (domain) {
 /* 634 */,
 /* 635 */,
 /* 636 */,
-/* 637 */,
+/* 637 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getInfo = void 0;
+const core = __importStar(__webpack_require__(470));
+const child_process_1 = __webpack_require__(129);
+const path_1 = __importDefault(__webpack_require__(622));
+const constants_1 = __webpack_require__(196);
+const shaAlgo = "256";
+const cacheVersion = "4";
+const ruleRegexp = (ruleTarget) => new RegExp(`^${ruleTarget}:(.*)$`, "m");
+function getInfo() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const ruleTarget = core.getInput(constants_1.Inputs.Rule, { required: true });
+        const targetKey = core.getInput(constants_1.Inputs.Key, {
+            required: true
+        });
+        const makefile = path_1.default.relative(".", core.getInput(constants_1.Inputs.Makefile) || "Makefile");
+        const makefileDir = path_1.default.relative(".", path_1.default.dirname(makefile));
+        const cacheTarget = path_1.default.relative(".", path_1.default.join(makefileDir, ruleTarget));
+        core.info(`Target to cache: ${cacheTarget}`);
+        const cmd = `cd ${makefileDir} && make -f ${path_1.default.basename(makefile)} -pn ${ruleTarget}`;
+        core.info("Running: " + cmd);
+        const raw = child_process_1.execSync(cmd).toString("utf-8");
+        const matches = raw.match(ruleRegexp(ruleTarget));
+        if (!(matches === null || matches === void 0 ? void 0 : matches.length) || matches.length < 2) {
+            throw new Error("rule not found");
+        }
+        const sources = matches[1]
+            .trim()
+            .split(/\s+/)
+            .map(src => path_1.default.relative(".", path_1.default.join(makefileDir, src)))
+            .sort((a, b) => a.localeCompare(b));
+        if (!sources.length) {
+            throw new Error(`no sources`);
+        }
+        core.info(`Sources: ${sources}`);
+        const hashes = yield Promise.all(sources.map((source) => __awaiter(this, void 0, void 0, function* () { return child_process_1.execSync(`shasum -a ${shaAlgo} ${source}`).toString("utf-8"); })));
+        const sourcesHash = child_process_1.execSync(`shasum -a ${shaAlgo}`, {
+            input: hashes.join("\n")
+        })
+            .toString("utf-8")
+            .split(/\s+/)[0]
+            .trim();
+        core.info(`Sources hash: ${sourcesHash}`);
+        const key = `mkache-v${cacheVersion}-${targetKey}-${sourcesHash}`;
+        core.info(`Key: ${key}`);
+        return { key, cacheTarget };
+    });
+}
+exports.getInfo = getInfo;
+
+
+/***/ }),
 /* 638 */,
 /* 639 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -46746,7 +46834,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
+const child_process_1 = __webpack_require__(129);
 const constants_1 = __webpack_require__(196);
+const mkache = __importStar(__webpack_require__(637));
 const utils = __importStar(__webpack_require__(443));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -46761,12 +46851,11 @@ function run() {
                 utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
-            const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
+            const { key: primaryKey, cacheTarget } = yield mkache.getInfo();
             core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-            const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
+            core.saveState(constants_1.State.CacheTarget, cacheTarget);
+            const restoreKeys = [];
+            const cachePaths = [cacheTarget];
             try {
                 const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
                 if (!cacheKey) {
@@ -46780,6 +46869,7 @@ function run() {
                 utils.setCacheState(cacheKey);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
                 utils.setCacheHitOutput(isExactKeyMatch);
+                child_process_1.execSync(`touch ${cacheTarget}`);
                 core.info(`Cache restored from key: ${cacheKey}`);
             }
             catch (error) {
